@@ -4,6 +4,7 @@ import com.ecommerce.userservice.model.User;
 import com.ecommerce.userservice.model.response.MessageResponse;
 import com.ecommerce.userservice.model.response.ProfileResponse;
 import com.ecommerce.userservice.services.UserService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -12,9 +13,9 @@ import org.springframework.web.bind.annotation.*;
 @CrossOrigin(origins = "*", maxAge = 3600)
 @RestController
 @RequestMapping("/api/users")
+@RequiredArgsConstructor
 public class UserController {
-    @Autowired
-    UserService userService;
+    private final UserService userService;
 
     @GetMapping("/profile")
     public ResponseEntity<?> getUserProfile() {

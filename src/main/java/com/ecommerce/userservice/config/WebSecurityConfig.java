@@ -2,7 +2,9 @@ package com.ecommerce.userservice.config;
 
 import com.ecommerce.userservice.repository.UserRepository;
 import com.ecommerce.userservice.security.AuthTokenFilter;
+import com.ecommerce.userservice.security.JwtUtils;
 import com.ecommerce.userservice.services.UserService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -21,13 +23,15 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 @Configuration
 @EnableWebSecurity
+@RequiredArgsConstructor
 public class WebSecurityConfig {
-    @Autowired
-    UserRepository userRepository;
+    private final UserRepository userRepository;
+
+    private final JwtUtils jwtUtils;
 
     @Bean
     public AuthTokenFilter authenticationJwtTokenFilter() {
-        return new AuthTokenFilter();
+        return new AuthTokenFilter(jwtUtils, userDetailsService());
     }
 
     @Bean
