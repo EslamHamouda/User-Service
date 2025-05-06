@@ -1,4 +1,4 @@
-package com.ecommerce.userservice.model.request;
+package com.ecommerce.userservice.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
@@ -10,7 +10,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @Getter
 @Setter
-public class LoginRequest {
+public class LoginDtoRequest {
     @NotBlank
     private String username;
 

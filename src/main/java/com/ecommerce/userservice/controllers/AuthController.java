@@ -1,15 +1,18 @@
 package com.ecommerce.userservice.controllers;
 
-import com.ecommerce.userservice.model.request.LoginRequest;
-import com.ecommerce.userservice.model.request.PasswordResetConfirmRequest;
-import com.ecommerce.userservice.model.request.PasswordResetRequest;
-import com.ecommerce.userservice.model.request.SignupRequest;
-import com.ecommerce.userservice.model.response.MessageResponse;
+import com.ecommerce.userservice.dto.request.LoginDtoRequest;
+import com.ecommerce.userservice.dto.request.PasswordResetConfirmDtoRequest;
+import com.ecommerce.userservice.dto.request.PasswordResetDtoRequest;
+import com.ecommerce.userservice.dto.request.SignupDtoRequest;
+import com.ecommerce.userservice.dto.response.GenericResponse;
+import com.ecommerce.userservice.dto.response.LoginDtoResponse;
 import com.ecommerce.userservice.services.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import static org.springframework.http.HttpStatus.OK;
 
 
 @CrossOrigin(origins = "*", maxAge = 3600)
@@ -20,41 +23,25 @@ public class AuthController {
     private final AuthService authService;
 
     @PostMapping("/signin")
-    public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
-        try {
-            return ResponseEntity.ok(authService.authenticateUser(loginRequest));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(new MessageResponse("Invalid username or password"));
-        }
+    public ResponseEntity<GenericResponse<LoginDtoResponse>> authenticateUser(@Valid @RequestBody LoginDtoRequest loginDtoRequest) {
+        return ResponseEntity.ok(new GenericResponse<>(OK.value(), null, authService.authenticateUser(loginDtoRequest)));
     }
 
     @PostMapping("/signup")
-    public ResponseEntity<?> registerUser(@Valid @RequestBody SignupRequest signUpRequest) {
-        try {
-            String message = authService.registerUser(signUpRequest);
-            return ResponseEntity.ok(new MessageResponse(message));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(new MessageResponse("Error: Something went wrong!"));
-        }
+    public ResponseEntity<GenericResponse<String>> registerUser(@Valid @RequestBody SignupDtoRequest signUpDtoRequest) {
+        String message = authService.registerUser(signUpDtoRequest);
+        return ResponseEntity.ok(new GenericResponse<>(OK.value(), message, null));
     }
 
     @PostMapping("/reset-password")
-    public ResponseEntity<?> resetPassword(@Valid @RequestBody PasswordResetRequest resetRequest) {
-        try {
-            String message = authService.resetPassword(resetRequest);
-            return ResponseEntity.ok(new MessageResponse(message));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(new MessageResponse("Error: Something went wrong!"));
-        }
+    public ResponseEntity<GenericResponse<String>> resetPassword(@Valid @RequestBody PasswordResetDtoRequest resetRequest) {
+        String message = authService.resetPassword(resetRequest);
+        return ResponseEntity.ok(new GenericResponse<>(OK.value(), message, null));
     }
 
     @PostMapping("/reset-password-confirm")
-    public ResponseEntity<?> resetPasswordConfirm(@Valid @RequestBody PasswordResetConfirmRequest confirmRequest) {
-        try {
-            String message = authService.resetPasswordConfirm(confirmRequest);
-            return ResponseEntity.ok(new MessageResponse(message));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(new MessageResponse("Error: Something went wrong!"));
-        }
+    public ResponseEntity<GenericResponse<String>> resetPasswordConfirm(@Valid @RequestBody PasswordResetConfirmDtoRequest confirmRequest) {
+        String message = authService.resetPasswordConfirm(confirmRequest);
+        return ResponseEntity.ok(new GenericResponse<>(OK.value(), message, null));
     }
 }

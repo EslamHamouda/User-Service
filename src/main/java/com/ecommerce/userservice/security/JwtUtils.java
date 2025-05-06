@@ -1,6 +1,8 @@
 package com.ecommerce.userservice.security;
 
-import com.ecommerce.userservice.model.User;
+import com.ecommerce.userservice.entity.UserEntity;
+import com.ecommerce.userservice.exception.BadCredentialsException;
+import com.ecommerce.userservice.exception.ValidationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -11,6 +13,8 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.io.Decoders;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+
 import javax.crypto.SecretKey;
 
 @Component
@@ -24,13 +28,12 @@ public class JwtUtils {
     private int jwtExpirationMs;
 
     private SecretKey getSigningKey() {
-        // Decode the Base64 secret to get the proper key
         byte[] keyBytes = Decoders.BASE64.decode(jwtSecret);
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
     public String generateJwtToken(Authentication authentication) {
-        User userPrincipal = (User) authentication.getPrincipal();
+        UserEntity userPrincipal = (UserEntity) authentication.getPrincipal();
 
         return Jwts.builder()
                 .subject(userPrincipal.getUsername())
@@ -57,11 +60,9 @@ public class JwtUtils {
                     .parseSignedClaims(authToken);
             return true;
         } catch (JwtException e) {
-            logger.error("Invalid JWT token: {}", e.getMessage());
+            throw new BadCredentialsException("Invalid JWT token: {}" + e.getMessage());
         } catch (IllegalArgumentException e) {
-            logger.error("JWT claims string is empty: {}", e.getMessage());
+            throw new ValidationException("JWT claims string is empty: {}" + e.getMessage());
         }
-
-        return false;
     }
 }

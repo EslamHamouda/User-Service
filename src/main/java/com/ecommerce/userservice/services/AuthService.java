@@ -1,17 +1,17 @@
 package com.ecommerce.userservice.services;
 
-import com.ecommerce.userservice.model.request.LoginRequest;
-import com.ecommerce.userservice.model.request.PasswordResetConfirmRequest;
-import com.ecommerce.userservice.model.request.PasswordResetRequest;
-import com.ecommerce.userservice.model.request.SignupRequest;
-import com.ecommerce.userservice.model.response.LoginResponse;
+import com.ecommerce.userservice.dto.request.LoginDtoRequest;
+import com.ecommerce.userservice.dto.request.PasswordResetConfirmDtoRequest;
+import com.ecommerce.userservice.dto.request.PasswordResetDtoRequest;
+import com.ecommerce.userservice.dto.request.SignupDtoRequest;
+import com.ecommerce.userservice.dto.response.LoginDtoResponse;
 
 public interface AuthService {
-    LoginResponse authenticateUser(LoginRequest loginRequest);
+    LoginDtoResponse authenticateUser(LoginDtoRequest loginDtoRequest);
 
-    String registerUser(SignupRequest signUpRequest);
+    String registerUser(SignupDtoRequest signUpDtoRequest);
 
-    String resetPassword(PasswordResetRequest resetRequest);
+    String resetPassword(PasswordResetDtoRequest resetRequest);
 
-    String resetPasswordConfirm(PasswordResetConfirmRequest confirmRequest);
+    String resetPasswordConfirm(PasswordResetConfirmDtoRequest confirmRequest);
 }

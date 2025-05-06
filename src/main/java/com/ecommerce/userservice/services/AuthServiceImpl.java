@@ -1,21 +1,26 @@
 package com.ecommerce.userservice.services;
 
-import com.ecommerce.userservice.model.User;
-import com.ecommerce.userservice.model.request.LoginRequest;
-import com.ecommerce.userservice.model.request.PasswordResetConfirmRequest;
-import com.ecommerce.userservice.model.request.PasswordResetRequest;
-import com.ecommerce.userservice.model.request.SignupRequest;
-import com.ecommerce.userservice.model.response.LoginResponse;
+import com.ecommerce.userservice.exception.BadCredentialsException;
+import com.ecommerce.userservice.exception.DuplicateResourceException;
+import com.ecommerce.userservice.exception.ResourceNotFoundException;
+import com.ecommerce.userservice.mapper.UserMapper;
+import com.ecommerce.userservice.entity.UserEntity;
+import com.ecommerce.userservice.dto.request.LoginDtoRequest;
+import com.ecommerce.userservice.dto.request.PasswordResetConfirmDtoRequest;
+import com.ecommerce.userservice.dto.request.PasswordResetDtoRequest;
+import com.ecommerce.userservice.dto.request.SignupDtoRequest;
+import com.ecommerce.userservice.dto.response.LoginDtoResponse;
 import com.ecommerce.userservice.repository.UserRepository;
 import com.ecommerce.userservice.security.JwtUtils;
+import jakarta.validation.ValidationException;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
 import java.util.Date;
 import java.util.Optional;
 import java.util.UUID;
@@ -31,65 +36,60 @@ public class AuthServiceImpl implements AuthService {
 
     private final JwtUtils jwtUtils;
 
+    private final UserMapper userMapper;
+
     @Override
-    public LoginResponse authenticateUser(LoginRequest loginRequest) {
+    public LoginDtoResponse authenticateUser(LoginDtoRequest loginDtoRequest) {
+        if (!userRepository.existsByUsername(loginDtoRequest.getUsername())) {
+            throw new BadCredentialsException("Invalid username or password.");
+        }
+
         Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(loginRequest.getUsername(), loginRequest.getPassword()));
+                new UsernamePasswordAuthenticationToken(loginDtoRequest.getUsername(), loginDtoRequest.getPassword()));
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
         String jwt = jwtUtils.generateJwtToken(authentication);
 
-        User user =(User) authentication.getPrincipal();
+        UserEntity user = (UserEntity) authentication.getPrincipal();
 
-        return new LoginResponse(jwt,
-                user.getId(),
-                user.getUsername(),
-                user.getEmail(),
-                user.getFirstName(),
-                user.getLastName(),
-                user.getPhone());
+        return userMapper.toLoginResponse(user, jwt);
     }
 
     @Override
-    public String registerUser(SignupRequest signUpRequest) {
-        if (userRepository.existsByUsername(signUpRequest.getUsername())) {
-            return "Error: Username is already taken!";
+    public String registerUser(SignupDtoRequest signUpDtoRequest) {
+        if (userRepository.existsByUsername(signUpDtoRequest.getUsername())) {
+            throw new DuplicateResourceException("Error: Username is already taken!");
         }
 
-        if (userRepository.existsByEmail(signUpRequest.getEmail())) {
-            return "Error: Email is already in use!";
+        if (userRepository.existsByEmail(signUpDtoRequest.getEmail())) {
+            throw new DuplicateResourceException("Error: Email is already in use!");
         }
 
-        // Create new user's account
-        User user = new User(signUpRequest.getUsername(),
-                signUpRequest.getEmail(),
-                encoder.encode(signUpRequest.getPassword()),
-                signUpRequest.getFirstName(),
-                signUpRequest.getLastName(),
-                signUpRequest.getPhone());
+        UserEntity user = new UserEntity(signUpDtoRequest.getUsername(),
+                signUpDtoRequest.getEmail(),
+                encoder.encode(signUpDtoRequest.getPassword()),
+                signUpDtoRequest.getFirstName(),
+                signUpDtoRequest.getLastName(),
+                signUpDtoRequest.getPhone());
 
         userRepository.save(user);
         return "User registered successfully!";
     }
 
     @Override
-    public String resetPassword(PasswordResetRequest resetRequest) {
-        Optional<User> userOptional = userRepository.findByEmail(resetRequest.getEmail());
+    public String resetPassword(PasswordResetDtoRequest resetRequest) {
+        Optional<UserEntity> userOptional = userRepository.findByEmail(resetRequest.getEmail());
 
         if (userOptional.isEmpty()) {
-            // For security reasons, don't reveal that the email doesn't exist
-            return "If your email exists in our system, you will receive a password reset link.";
+            throw new ResourceNotFoundException("If your email exists in our system, you will receive a password reset link.");
         }
 
-        User user = userOptional.get();
+        UserEntity user = userOptional.get();
 
-        // Generate a random token
         String token = UUID.randomUUID().toString();
 
-        // Set token expiration to 24 hours from now
         Date expiryDate = new Date(System.currentTimeMillis() + 24 * 60 * 60 * 1000);
 
-        // Save the token and expiry date to the user
         user.setResetPasswordToken(token);
         user.setResetPasswordTokenExpiry(expiryDate);
         userRepository.save(user);
@@ -98,25 +98,21 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public String resetPasswordConfirm(PasswordResetConfirmRequest confirmRequest) {
-        Optional<User> userOptional = userRepository.findByResetPasswordToken(confirmRequest.getToken());
+    public String resetPasswordConfirm(PasswordResetConfirmDtoRequest confirmRequest) {
+        Optional<UserEntity> userOptional = userRepository.findByResetPasswordToken(confirmRequest.getToken());
 
         if (userOptional.isEmpty()) {
-            return "Invalid or expired token.";
+            throw new ResourceNotFoundException("Invalid or expired token.");
         }
 
-        User user = userOptional.get();
+        UserEntity user = userOptional.get();
 
-        // Check if token is expired
-        if (user.getResetPasswordTokenExpiry() == null ||
-                user.getResetPasswordTokenExpiry().before(new Date())) {
-            return "Token has expired.";
+        if (user.getResetPasswordTokenExpiry() == null || user.getResetPasswordTokenExpiry().before(new Date())) {
+            throw new ValidationException( "Token has expired.");
         }
 
-        // Update password
         user.setPassword(encoder.encode(confirmRequest.getPassword()));
 
-        // Clear the reset token and expiry
         user.setResetPasswordToken(null);
         user.setResetPasswordTokenExpiry(null);
 

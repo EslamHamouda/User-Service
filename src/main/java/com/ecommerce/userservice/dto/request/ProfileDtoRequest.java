@@ -1,4 +1,4 @@
-package com.ecommerce.userservice.model.response;
+package com.ecommerce.userservice.dto.request;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -9,10 +9,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @Getter
 @Setter
-public class ProfileResponse {
-    private Long id;
-    private String username;
-    private String email;
+public class ProfileDtoRequest {
     private String firstName;
     private String lastName;
     private String phone;

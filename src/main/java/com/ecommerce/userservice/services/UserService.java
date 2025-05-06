@@ -1,9 +1,10 @@
 package com.ecommerce.userservice.services;
 
-import com.ecommerce.userservice.model.User;
+import com.ecommerce.userservice.dto.request.ProfileDtoRequest;
+import com.ecommerce.userservice.dto.response.ProfileDtoResponse;
 
 public interface UserService {
-    User getUserProfile();
+    ProfileDtoResponse getUserProfile();
 
-    String updateUserProfile(User userUpdates);
+    String updateUserProfile(ProfileDtoRequest profileDtoRequest);
 }

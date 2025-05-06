@@ -1,4 +1,4 @@
-package com.ecommerce.userservice.model;
+package com.ecommerce.userservice.entity;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
@@ -26,7 +26,7 @@ import java.util.List;
        uniqueConstraints = {
            @UniqueConstraint(columnNames = {"username", "email"})
        })
-public class User implements UserDetails {
+public class UserEntity implements UserDetails {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -68,7 +68,7 @@ public class User implements UserDetails {
     @UpdateTimestamp
     private Date updatedAt;
 
-    public User(String username, String email, String encode, String firstName, String lastName, String phone) {
+    public UserEntity(String username, String email, String encode, String firstName, String lastName, String phone) {
         this.username = username;
         this.email = email;
         this.password = encode;

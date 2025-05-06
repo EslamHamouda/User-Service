@@ -1,55 +1,62 @@
 package com.ecommerce.userservice.services;
 
-import com.ecommerce.userservice.model.User;
+import com.ecommerce.userservice.exception.ResourceNotFoundException;
+import com.ecommerce.userservice.mapper.UserMapper;
+import com.ecommerce.userservice.entity.UserEntity;
+import com.ecommerce.userservice.dto.request.ProfileDtoRequest;
+import com.ecommerce.userservice.dto.response.ProfileDtoResponse;
 import com.ecommerce.userservice.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
+
 import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
+    private final UserMapper userMapper;
 
     @Override
-    public User getUserProfile() {
+    public ProfileDtoResponse getUserProfile() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        User userDetails = (User) authentication.getPrincipal();
+        UserEntity userDetails = (UserEntity) authentication.getPrincipal();
 
-        Optional<User> user = userRepository.findById(userDetails.getId());
+        Optional<UserEntity> user = userRepository.findById(userDetails.getId());
 
-        return user.orElseGet(User::new);
+        if (user.isEmpty()) {
+            throw new ResourceNotFoundException("User not found!");
+        }
+
+        return userMapper.toProfileResponse(user.get());
     }
 
     @Override
-    public String updateUserProfile(User userUpdates) {
+    public String updateUserProfile(ProfileDtoRequest profileDtoRequest) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        User userDetails = (User) authentication.getPrincipal();
+        UserEntity userDetails = (UserEntity) authentication.getPrincipal();
 
-        Optional<User> userOptional = userRepository.findById(userDetails.getId());
+        Optional<UserEntity> userOptional = userRepository.findById(userDetails.getId());
 
-        if (userOptional.isPresent()) {
-            User user = userOptional.get();
-
-            // Update only allowed fields (not username, email, or password)
-            if (userUpdates.getFirstName() != null) {
-                user.setFirstName(userUpdates.getFirstName());
-            }
-            if (userUpdates.getLastName() != null) {
-                user.setLastName(userUpdates.getLastName());
-            }
-            if (userUpdates.getPhone() != null) {
-                user.setPhone(userUpdates.getPhone());
-            }
-
-            userRepository.save(user);
-            return "Profile updated successfully!";
+        if (userOptional.isEmpty()) {
+            throw new ResourceNotFoundException("User not found!");
         }
-            return "";
+
+        UserEntity user = userOptional.get();
+
+        if (profileDtoRequest.getFirstName() != null) {
+            user.setFirstName(profileDtoRequest.getFirstName());
+        }
+        if (profileDtoRequest.getLastName() != null) {
+            user.setLastName(profileDtoRequest.getLastName());
+        }
+        if (profileDtoRequest.getPhone() != null) {
+            user.setPhone(profileDtoRequest.getPhone());
+        }
+
+        userRepository.save(user);
+        return "Profile updated successfully!";
     }
 }
