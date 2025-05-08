@@ -13,8 +13,6 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.io.Decoders;
-import org.springframework.web.bind.MethodArgumentNotValidException;
-
 import javax.crypto.SecretKey;
 
 @Component
@@ -60,8 +58,10 @@ public class JwtUtils {
                     .parseSignedClaims(authToken);
             return true;
         } catch (JwtException e) {
+            logger.error("Invalid JWT token: {}", e.getMessage());
             throw new BadCredentialsException("Invalid JWT token: {}" + e.getMessage());
         } catch (IllegalArgumentException e) {
+            logger.error("JWT claims string is empty: {}", e.getMessage());
             throw new ValidationException("JWT claims string is empty: {}" + e.getMessage());
         }
     }

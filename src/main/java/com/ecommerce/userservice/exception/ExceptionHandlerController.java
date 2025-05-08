@@ -3,6 +3,7 @@ package com.ecommerce.userservice.exception;
 import com.ecommerce.userservice.dto.response.ErrorResponse;
 import com.ecommerce.userservice.utils.DateUtils;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -39,6 +40,12 @@ public class ExceptionHandlerController {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ErrorResponse handleMethodArgumentNotValidExceptionException(MethodArgumentNotValidException ex) {
         return new ErrorResponse(ex.getStatusCode().value(), ex.getMessage(), DateUtils.currentLocalDateTime());
+    }
+
+    @ExceptionHandler(AuthenticationException.class)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    public ErrorResponse handleAuthenticationException(AuthenticationException ex) {
+        return new ErrorResponse(HttpStatus.UNAUTHORIZED.value(), ex.getMessage(), DateUtils.currentLocalDateTime());
     }
 
     @ExceptionHandler(Exception.class)

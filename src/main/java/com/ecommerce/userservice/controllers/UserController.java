@@ -7,7 +7,6 @@ import com.ecommerce.userservice.services.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
 import static org.springframework.http.HttpStatus.OK;
 
 @CrossOrigin(origins = "*", maxAge = 3600)
