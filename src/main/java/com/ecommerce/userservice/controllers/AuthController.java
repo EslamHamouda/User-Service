@@ -45,7 +45,7 @@ public class AuthController {
         return ResponseEntity.ok(new GenericResponse<>(OK.value(), message, null));
     }
 
-    @PostMapping("/refresh-token")
+    @GetMapping("/refresh-token")
     public ResponseEntity<GenericResponse<String>> refreshToken(@RequestParam String refreshToken) {
         String newToken = authService.refreshToken(refreshToken);
         return ResponseEntity.ok(new GenericResponse<>(OK.value(), "Token refreshed successfully", newToken));

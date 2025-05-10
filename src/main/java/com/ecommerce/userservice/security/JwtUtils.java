@@ -31,8 +31,8 @@ public class JwtUtils {
     @Value("${jwt.refreshToken.expiration}")
     private long refreshTokenExpirationMs;
 
-    @Value("${jwt.expiration}")
-    private long jwtExpirationMs;
+    @Value("${jwt.passwordResetToken.expiration}")
+    private long passwordResetTokenExpirationMs;
 
     private SecretKey getSigningKey() {
         byte[] keyBytes = Decoders.BASE64.decode(jwtSecret);
@@ -46,10 +46,22 @@ public class JwtUtils {
         return tokenBuilder(claims, userPrincipal.getUsername(), accessTokenExpirationMs);
     }
 
+    public String generateAccessToken(String subject) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("tokenType", "access");
+        return tokenBuilder(claims, subject, accessTokenExpirationMs);
+    }
+
     public String generateRefreshToken(String subject) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("tokenType", "refresh");
         return tokenBuilder(claims, subject, refreshTokenExpirationMs);
+    }
+
+    public String generatePasswordResetToken(String email) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("tokenType", "passwordReset");
+        return tokenBuilder(claims, email, passwordResetTokenExpirationMs);
     }
 
     private String tokenBuilder(Map<String, Object> claims, String subject, Long expiration) {
@@ -96,14 +108,6 @@ public class JwtUtils {
         }
     }
 
-    public Claims extractAllClaims(String token) {
-        return Jwts.parser()
-                .verifyWith(getSigningKey())
-                .build()
-                .parseSignedClaims(token)
-                .getPayload();
-    }
-
     public boolean isTokenExpired(String token) {
         try {
             Claims claims = extractAllClaims(token);
@@ -112,12 +116,6 @@ public class JwtUtils {
         } catch (Exception ex) {
             return false;
         }
-    }
-
-    public String generatePasswordResetToken(String email) {
-        Map<String, Object> claims = new HashMap<>();
-        claims.put("tokenType", "passwordReset");
-        return tokenBuilder(claims, email, jwtExpirationMs);
     }
 
     public boolean isPasswordResetToken(String token) {
@@ -129,7 +127,20 @@ public class JwtUtils {
         }
     }
 
-    public long getJwtExpirationMs() {
-        return jwtExpirationMs;
+    public boolean isAccessToken(String token) {
+        try {
+            Claims claims = extractAllClaims(token);
+            return "access".equals(claims.get("tokenType"));
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    public Claims extractAllClaims(String token) {
+        return Jwts.parser()
+                .verifyWith(getSigningKey())
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
     }
 }

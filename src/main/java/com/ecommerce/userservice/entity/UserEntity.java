@@ -54,11 +54,7 @@ public class UserEntity implements UserDetails {
     @Size(max = 15)
     private String phone;
 
-    @Size(max = 100)
     private String resetPasswordToken;
-
-    @Temporal(TemporalType.TIMESTAMP)
-    private Date resetPasswordTokenExpiry;
 
     @CreationTimestamp
     @Column(updatable = false)

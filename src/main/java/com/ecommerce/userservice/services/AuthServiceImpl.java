@@ -70,7 +70,7 @@ public class AuthServiceImpl implements AuthService {
 
         UserEntity user = userOptional.get();
 
-        return jwtUtils.generateRefreshToken(user.getUsername());
+        return jwtUtils.generateAccessToken(user.getUsername());
     }
 
     @Override
@@ -106,10 +106,7 @@ public class AuthServiceImpl implements AuthService {
 
         String token = jwtUtils.generatePasswordResetToken(user.getEmail());
 
-        // Store the token in the user entity for verification
         user.setResetPasswordToken(token);
-        // JWT expiration is handled by the token itself, but we'll store it for consistency
-        user.setResetPasswordTokenExpiry(new Date(System.currentTimeMillis() + jwtUtils.getJwtExpirationMs()));
         userRepository.save(user);
 
         return "Password reset link has been sent to your email. Token: " + token;
@@ -117,22 +114,18 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public String resetPasswordConfirm(PasswordResetConfirmDtoRequest confirmRequest) {
-        String token = confirmRequest.getToken();
+        String token = confirmRequest.getPasswordResetToken();
 
-        // Validate the JWT token
         if (!jwtUtils.validateJwtToken(token) || !jwtUtils.isPasswordResetToken(token)) {
             throw new BadCredentialsException("Invalid password reset token.");
         }
 
-        // Check if token is expired
         if (jwtUtils.isTokenExpired(token)) {
             throw new ValidationException("Token has expired.");
         }
 
-        // Extract email from token
         String email = jwtUtils.getUserNameFromJwtToken(token);
 
-        // Find user by email
         Optional<UserEntity> userOptional = userRepository.findByEmail(email);
         if (userOptional.isEmpty()) {
             throw new ResourceNotFoundException("User not found.");
@@ -140,17 +133,13 @@ public class AuthServiceImpl implements AuthService {
 
         UserEntity user = userOptional.get();
 
-        // Verify that the token matches the one stored in the database
         if (!token.equals(user.getResetPasswordToken())) {
             throw new BadCredentialsException("Invalid password reset token.");
         }
 
-        // Update password
         user.setPassword(encoder.encode(confirmRequest.getPassword()));
 
-        // Clear reset token data
         user.setResetPasswordToken(null);
-        user.setResetPasswordTokenExpiry(null);
 
         userRepository.save(user);
         return "Password has been reset successfully.";

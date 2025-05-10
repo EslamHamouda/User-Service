@@ -9,10 +9,10 @@ import org.mapstruct.MappingConstants;
 
 @Mapper(componentModel = MappingConstants.ComponentModel.SPRING)
 public interface UserMapper {
-    @Mapping(target = "token", source = "token")
+    @Mapping(target = "accessToken", source = "accessToken")
     @Mapping(target = "refreshToken", source = "refreshToken")
     @Mapping(target = "type", constant = "Bearer")
-    LoginDtoResponse toLoginResponse(UserEntity entity, String token, String refreshToken);
+    LoginDtoResponse toLoginResponse(UserEntity entity, String accessToken, String refreshToken);
 
     ProfileDtoResponse toProfileResponse(UserEntity entity);
 }

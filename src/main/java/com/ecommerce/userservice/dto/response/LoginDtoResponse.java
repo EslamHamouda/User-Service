@@ -8,7 +8,7 @@ import lombok.Setter;
 @Getter
 @Setter
 public class LoginDtoResponse {
-    private String token;
+    private String accessToken;
     private String refreshToken;
     private String type = "Bearer";
     private Long id;
@@ -18,8 +18,8 @@ public class LoginDtoResponse {
     private String lastName;
     private String phone;
 
-    public LoginDtoResponse(String jwt, String refreshToken, Long id, String username, String email, String firstName, String lastName, String phone) {
-        this.token = jwt;
+    public LoginDtoResponse(String accessToken, String refreshToken, Long id, String username, String email, String firstName, String lastName, String phone) {
+        this.accessToken = accessToken;
         this.refreshToken = refreshToken;
         this.id = id;
         this.username = username;
