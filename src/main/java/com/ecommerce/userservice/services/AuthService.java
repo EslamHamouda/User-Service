@@ -14,4 +14,6 @@ public interface AuthService {
     String resetPassword(PasswordResetDtoRequest resetRequest);
 
     String resetPasswordConfirm(PasswordResetConfirmDtoRequest confirmRequest);
+
+    String refreshToken(String refreshToken);
 }

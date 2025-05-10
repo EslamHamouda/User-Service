@@ -3,12 +3,15 @@ package com.ecommerce.userservice.security;
 import com.ecommerce.userservice.entity.UserEntity;
 import com.ecommerce.userservice.exception.BadCredentialsException;
 import com.ecommerce.userservice.exception.ValidationException;
+import io.jsonwebtoken.Claims;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import io.jsonwebtoken.JwtException;
@@ -20,23 +23,41 @@ public class JwtUtils {
     private static final Logger logger = LoggerFactory.getLogger(JwtUtils.class);
 
     @Value("${jwt.secret}")
-    private String jwtSecret; // Should be a Base64-encoded string!
+    private String jwtSecret;
+
+    @Value("${jwt.accessToken.expiration}")
+    private long accessTokenExpirationMs;
+
+    @Value("${jwt.refreshToken.expiration}")
+    private long refreshTokenExpirationMs;
 
     @Value("${jwt.expiration}")
-    private int jwtExpirationMs;
+    private long jwtExpirationMs;
 
     private SecretKey getSigningKey() {
         byte[] keyBytes = Decoders.BASE64.decode(jwtSecret);
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
-    public String generateJwtToken(Authentication authentication) {
+    public String generateAccessToken(Authentication authentication) {
         UserEntity userPrincipal = (UserEntity) authentication.getPrincipal();
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("tokenType", "access");
+        return tokenBuilder(claims, userPrincipal.getUsername(), accessTokenExpirationMs);
+    }
 
+    public String generateRefreshToken(String subject) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("tokenType", "refresh");
+        return tokenBuilder(claims, subject, refreshTokenExpirationMs);
+    }
+
+    private String tokenBuilder(Map<String, Object> claims, String subject, Long expiration) {
         return Jwts.builder()
-                .subject(userPrincipal.getUsername())
-                .issuedAt(new Date())
-                .expiration(new Date((new Date()).getTime() + jwtExpirationMs))
+                .subject(subject)
+                .claims(claims)
+                .issuedAt(new Date(System.currentTimeMillis()))
+                .expiration(new Date(System.currentTimeMillis() + expiration))
                 .signWith(getSigningKey())
                 .compact();
     }
@@ -64,5 +85,51 @@ public class JwtUtils {
             logger.error("JWT claims string is empty: {}", e.getMessage());
             throw new ValidationException("JWT claims string is empty: {}" + e.getMessage());
         }
+    }
+
+    public boolean isRefreshToken(String token) {
+        try {
+            Claims claims = extractAllClaims(token);
+            return "refresh".equals(claims.get("tokenType"));
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    public Claims extractAllClaims(String token) {
+        return Jwts.parser()
+                .verifyWith(getSigningKey())
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
+    }
+
+    public boolean isTokenExpired(String token) {
+        try {
+            Claims claims = extractAllClaims(token);
+
+            return claims.getExpiration().before(new Date());
+        } catch (Exception ex) {
+            return false;
+        }
+    }
+
+    public String generatePasswordResetToken(String email) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("tokenType", "passwordReset");
+        return tokenBuilder(claims, email, jwtExpirationMs);
+    }
+
+    public boolean isPasswordResetToken(String token) {
+        try {
+            Claims claims = extractAllClaims(token);
+            return "passwordReset".equals(claims.get("tokenType"));
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    public long getJwtExpirationMs() {
+        return jwtExpirationMs;
     }
 }

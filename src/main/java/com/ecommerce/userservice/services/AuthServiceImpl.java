@@ -47,11 +47,30 @@ public class AuthServiceImpl implements AuthService {
                 new UsernamePasswordAuthenticationToken(loginDtoRequest.getUsername(), loginDtoRequest.getPassword()));
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
-        String jwt = jwtUtils.generateJwtToken(authentication);
 
         UserEntity user = (UserEntity) authentication.getPrincipal();
+        String jwt = jwtUtils.generateAccessToken(authentication);
+        String refreshToken = jwtUtils.generateRefreshToken(user.getUsername());
 
-        return userMapper.toLoginResponse(user, jwt);
+        return userMapper.toLoginResponse(user, jwt, refreshToken);
+    }
+
+    @Override
+    public String refreshToken(String refreshToken) {
+        if (!jwtUtils.isRefreshToken(refreshToken)) {
+            throw new BadCredentialsException("Invalid refresh token");
+        }
+
+        String username = jwtUtils.getUserNameFromJwtToken(refreshToken);
+
+        Optional<UserEntity> userOptional = userRepository.findByUsername(username);
+        if (userOptional.isEmpty()) {
+            throw new ResourceNotFoundException("User not found");
+        }
+
+        UserEntity user = userOptional.get();
+
+        return jwtUtils.generateRefreshToken(user.getUsername());
     }
 
     @Override
@@ -85,12 +104,12 @@ public class AuthServiceImpl implements AuthService {
 
         UserEntity user = userOptional.get();
 
-        String token = UUID.randomUUID().toString();
+        String token = jwtUtils.generatePasswordResetToken(user.getEmail());
 
-        Date expiryDate = new Date(System.currentTimeMillis() + 24 * 60 * 60 * 1000);
-
+        // Store the token in the user entity for verification
         user.setResetPasswordToken(token);
-        user.setResetPasswordTokenExpiry(expiryDate);
+        // JWT expiration is handled by the token itself, but we'll store it for consistency
+        user.setResetPasswordTokenExpiry(new Date(System.currentTimeMillis() + jwtUtils.getJwtExpirationMs()));
         userRepository.save(user);
 
         return "Password reset link has been sent to your email. Token: " + token;
@@ -98,20 +117,38 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public String resetPasswordConfirm(PasswordResetConfirmDtoRequest confirmRequest) {
-        Optional<UserEntity> userOptional = userRepository.findByResetPasswordToken(confirmRequest.getToken());
+        String token = confirmRequest.getToken();
 
+        // Validate the JWT token
+        if (!jwtUtils.validateJwtToken(token) || !jwtUtils.isPasswordResetToken(token)) {
+            throw new BadCredentialsException("Invalid password reset token.");
+        }
+
+        // Check if token is expired
+        if (jwtUtils.isTokenExpired(token)) {
+            throw new ValidationException("Token has expired.");
+        }
+
+        // Extract email from token
+        String email = jwtUtils.getUserNameFromJwtToken(token);
+
+        // Find user by email
+        Optional<UserEntity> userOptional = userRepository.findByEmail(email);
         if (userOptional.isEmpty()) {
-            throw new ResourceNotFoundException("Invalid or expired token.");
+            throw new ResourceNotFoundException("User not found.");
         }
 
         UserEntity user = userOptional.get();
 
-        if (user.getResetPasswordTokenExpiry() == null || user.getResetPasswordTokenExpiry().before(new Date())) {
-            throw new ValidationException( "Token has expired.");
+        // Verify that the token matches the one stored in the database
+        if (!token.equals(user.getResetPasswordToken())) {
+            throw new BadCredentialsException("Invalid password reset token.");
         }
 
+        // Update password
         user.setPassword(encoder.encode(confirmRequest.getPassword()));
 
+        // Clear reset token data
         user.setResetPasswordToken(null);
         user.setResetPasswordTokenExpiry(null);
 
