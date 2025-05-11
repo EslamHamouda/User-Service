@@ -88,8 +88,7 @@ public class AuthServiceImpl implements AuthService {
                 encoder.encode(signUpDtoRequest.getPassword()),
                 signUpDtoRequest.getFirstName(),
                 signUpDtoRequest.getLastName(),
-                signUpDtoRequest.getPhone(),
-                signUpDtoRequest.getRole());
+                signUpDtoRequest.getPhone());
 
         userRepository.save(user);
         return "User registered successfully!";

@@ -70,18 +70,14 @@ public class UserEntity implements UserDetails {
     @UpdateTimestamp
     private Date updatedAt;
 
-    public UserEntity(String username, String email, String encode, String firstName, String lastName, String phone) {
-        this(username, email, encode, firstName, lastName, phone, Role.USER);
-    }
-
-    public UserEntity(String username, String email, String encode, String firstName, String lastName, String phone, Role role) {
+    public UserEntity(String username, String email, String password, String firstName, String lastName, String phone) {
         this.username = username;
         this.email = email;
-        this.password = encode;
+        this.password = password;
         this.firstName = firstName;
         this.lastName = lastName;
         this.phone = phone;
-        this.role = role;
+
     }
 
     @Override

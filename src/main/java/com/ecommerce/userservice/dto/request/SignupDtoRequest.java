@@ -37,6 +37,4 @@ public class SignupDtoRequest {
 
     @Size(max = 15)
     private String phone;
-
-    private Role role = Role.USER;
 }
