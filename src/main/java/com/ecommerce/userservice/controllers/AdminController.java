@@ -1,0 +1,39 @@
+package com.ecommerce.userservice.controllers;
+
+import com.ecommerce.userservice.dto.response.GenericResponse;
+import com.ecommerce.userservice.dto.response.ProfileDtoResponse;
+import com.ecommerce.userservice.entity.UserEntity;
+import com.ecommerce.userservice.services.UserService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+import static org.springframework.http.HttpStatus.OK;
+
+@CrossOrigin(origins = "*", maxAge = 3600)
+@RestController
+@RequestMapping("/api/admin")
+@RequiredArgsConstructor
+public class AdminController {
+    private final UserService userService;
+
+    @GetMapping("/users")
+    public ResponseEntity<GenericResponse<List<ProfileDtoResponse>>> getAllUsers() {
+        List<ProfileDtoResponse> users = userService.getAllUsers();
+        return ResponseEntity.ok(new GenericResponse<>(OK.value(), "All users retrieved successfully", users));
+    }
+
+    @GetMapping("/users/{id}")
+    public ResponseEntity<GenericResponse<ProfileDtoResponse>> getUserById(@PathVariable Long id) {
+        ProfileDtoResponse user = userService.getUserById(id);
+        return ResponseEntity.ok(new GenericResponse<>(OK.value(), "User retrieved successfully", user));
+    }
+
+    @DeleteMapping("/users/{id}")
+    public ResponseEntity<GenericResponse<String>> deleteUser(@PathVariable Long id) {
+        String message = userService.deleteUser(id);
+        return ResponseEntity.ok(new GenericResponse<>(OK.value(), message, null));
+    }
+}
