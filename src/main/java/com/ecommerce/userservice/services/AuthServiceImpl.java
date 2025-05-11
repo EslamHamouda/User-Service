@@ -20,9 +20,9 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
 import java.util.Date;
 import java.util.Optional;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -88,7 +88,8 @@ public class AuthServiceImpl implements AuthService {
                 encoder.encode(signUpDtoRequest.getPassword()),
                 signUpDtoRequest.getFirstName(),
                 signUpDtoRequest.getLastName(),
-                signUpDtoRequest.getPhone());
+                signUpDtoRequest.getPhone(),
+                signUpDtoRequest.getRole());
 
         userRepository.save(user);
         return "User registered successfully!";
@@ -107,6 +108,10 @@ public class AuthServiceImpl implements AuthService {
         String token = jwtUtils.generatePasswordResetToken(user.getEmail());
 
         user.setResetPasswordToken(token);
+
+        Date expiryDate = jwtUtils.extractAllClaims(token).getExpiration();
+        user.setResetPasswordTokenExpiryDate(expiryDate);
+
         userRepository.save(user);
 
         return "Password reset link has been sent to your email. Token: " + token;
@@ -120,26 +125,28 @@ public class AuthServiceImpl implements AuthService {
             throw new BadCredentialsException("Invalid password reset token.");
         }
 
-        if (jwtUtils.isTokenExpired(token)) {
-            throw new ValidationException("Token has expired.");
-        }
-
         String email = jwtUtils.getUserNameFromJwtToken(token);
 
-        Optional<UserEntity> userOptional = userRepository.findByEmail(email);
+        Optional<UserEntity> userOptional = userRepository.findByResetPasswordToken(email);
         if (userOptional.isEmpty()) {
             throw new ResourceNotFoundException("User not found.");
         }
 
         UserEntity user = userOptional.get();
 
-        if (!token.equals(user.getResetPasswordToken())) {
+        if (user.getResetPasswordToken() == null || !user.getResetPasswordToken().equals(token)) {
             throw new BadCredentialsException("Invalid password reset token.");
+        }
+
+        if (user.getResetPasswordTokenExpiryDate() == null || 
+            user.getResetPasswordTokenExpiryDate().before(new Date())) {
+            throw new BadCredentialsException("Password reset token has expired.");
         }
 
         user.setPassword(encoder.encode(confirmRequest.getPassword()));
 
         user.setResetPasswordToken(null);
+        user.setResetPasswordTokenExpiryDate(null);
 
         userRepository.save(user);
         return "Password has been reset successfully.";

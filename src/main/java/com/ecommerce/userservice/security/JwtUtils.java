@@ -43,6 +43,7 @@ public class JwtUtils {
         UserEntity userPrincipal = (UserEntity) authentication.getPrincipal();
         Map<String, Object> claims = new HashMap<>();
         claims.put("tokenType", "access");
+        claims.put("role", userPrincipal.getRole().name());
         return tokenBuilder(claims, userPrincipal.getUsername(), accessTokenExpirationMs);
     }
 
@@ -93,9 +94,6 @@ public class JwtUtils {
         } catch (JwtException e) {
             logger.error("Invalid JWT token: {}", e.getMessage());
             throw new BadCredentialsException("Invalid JWT token: {}" + e.getMessage());
-        } catch (IllegalArgumentException e) {
-            logger.error("JWT claims string is empty: {}", e.getMessage());
-            throw new ValidationException("JWT claims string is empty: {}" + e.getMessage());
         }
     }
 

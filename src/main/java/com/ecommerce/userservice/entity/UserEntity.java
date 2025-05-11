@@ -1,5 +1,6 @@
 package com.ecommerce.userservice.entity;
 
+import com.ecommerce.userservice.enums.Role;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -11,6 +12,7 @@ import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import java.util.Collection;
 import java.util.Date;
@@ -56,6 +58,11 @@ public class UserEntity implements UserDetails {
 
     private String resetPasswordToken;
 
+    private Date resetPasswordTokenExpiryDate;
+
+    @Enumerated(EnumType.STRING)
+    private Role role = Role.USER;
+
     @CreationTimestamp
     @Column(updatable = false)
     private Date createdAt;
@@ -64,17 +71,22 @@ public class UserEntity implements UserDetails {
     private Date updatedAt;
 
     public UserEntity(String username, String email, String encode, String firstName, String lastName, String phone) {
+        this(username, email, encode, firstName, lastName, phone, Role.USER);
+    }
+
+    public UserEntity(String username, String email, String encode, String firstName, String lastName, String phone, Role role) {
         this.username = username;
         this.email = email;
         this.password = encode;
         this.firstName = firstName;
         this.lastName = lastName;
         this.phone = phone;
+        this.role = role;
     }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of();
+        return List.of(new SimpleGrantedAuthority("ROLE_" + role.name()));
     }
 
     @Override

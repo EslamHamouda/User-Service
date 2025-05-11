@@ -6,6 +6,8 @@ import com.ecommerce.userservice.dto.response.ProfileDtoResponse;
 import com.ecommerce.userservice.services.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import static org.springframework.http.HttpStatus.OK;
 
@@ -27,5 +29,4 @@ public class UserController {
         String message = userService.updateUserProfile(profileDtoRequest);
         return ResponseEntity.ok(new GenericResponse<>(OK.value(), message, null));
     }
-
 }
