@@ -43,7 +43,7 @@ public class JwtUtils {
         UserEntity userPrincipal = (UserEntity) authentication.getPrincipal();
         Map<String, Object> claims = new HashMap<>();
         claims.put("tokenType", "access");
-        claims.put("role", userPrincipal.getRole().name());
+        claims.put("role", userPrincipal.getRole().getName().name());
         return tokenBuilder(claims, userPrincipal.getUsername(), accessTokenExpirationMs);
     }
 

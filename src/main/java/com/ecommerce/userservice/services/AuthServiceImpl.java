@@ -1,5 +1,7 @@
 package com.ecommerce.userservice.services;
 
+import com.ecommerce.userservice.entity.RoleEntity;
+import com.ecommerce.userservice.enums.Role;
 import com.ecommerce.userservice.exception.BadCredentialsException;
 import com.ecommerce.userservice.exception.DuplicateResourceException;
 import com.ecommerce.userservice.exception.ResourceNotFoundException;
@@ -10,6 +12,7 @@ import com.ecommerce.userservice.dto.request.PasswordResetConfirmDtoRequest;
 import com.ecommerce.userservice.dto.request.PasswordResetDtoRequest;
 import com.ecommerce.userservice.dto.request.SignupDtoRequest;
 import com.ecommerce.userservice.dto.response.LoginDtoResponse;
+import com.ecommerce.userservice.repository.RoleRepository;
 import com.ecommerce.userservice.repository.UserRepository;
 import com.ecommerce.userservice.security.JwtUtils;
 import jakarta.validation.ValidationException;
@@ -30,6 +33,8 @@ public class AuthServiceImpl implements AuthService {
     private final AuthenticationManager authenticationManager;
 
     private final UserRepository userRepository;
+
+    private final RoleRepository roleRepository;
 
     private final PasswordEncoder encoder;
 
@@ -89,6 +94,11 @@ public class AuthServiceImpl implements AuthService {
                 signUpDtoRequest.getFirstName(),
                 signUpDtoRequest.getLastName(),
                 signUpDtoRequest.getPhone());
+
+        // Set default role to USER
+        RoleEntity userRole = roleRepository.findByName(Role.USER)
+                .orElseThrow(() -> new ResourceNotFoundException("Error: Role USER is not found."));
+        user.setRole(userRole);
 
         userRepository.save(user);
         return "User registered successfully!";

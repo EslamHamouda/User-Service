@@ -60,8 +60,9 @@ public class UserEntity implements UserDetails {
 
     private Date resetPasswordTokenExpiryDate;
 
-    @Enumerated(EnumType.STRING)
-    private Role role = Role.USER;
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "role_id")
+    private RoleEntity role;
 
     @CreationTimestamp
     @Column(updatable = false)
@@ -82,7 +83,7 @@ public class UserEntity implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(new SimpleGrantedAuthority("ROLE_" + role.name()));
+        return List.of(new SimpleGrantedAuthority("ROLE_" + role.getName().name()));
     }
 
     @Override
