@@ -48,6 +48,12 @@ public class ExceptionHandlerController {
         return new ErrorResponse(HttpStatus.UNAUTHORIZED.value(), ex.getMessage(), DateUtils.currentLocalDateTime());
     }
 
+    @ExceptionHandler(ResourceAlreadyExistException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErrorResponse handleResourceAlreadyExistException(ResourceAlreadyExistException ex) {
+        return new ErrorResponse(HttpStatus.BAD_REQUEST.value(), ex.getMessage(), DateUtils.currentLocalDateTime());
+    }
+
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public ErrorResponse handleGeneric(Exception ex) {

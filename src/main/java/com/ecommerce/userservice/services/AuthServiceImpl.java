@@ -1,5 +1,7 @@
 package com.ecommerce.userservice.services;
 
+import com.ecommerce.userservice.entity.RoleEntity;
+import com.ecommerce.userservice.enums.Role;
 import com.ecommerce.userservice.exception.BadCredentialsException;
 import com.ecommerce.userservice.exception.DuplicateResourceException;
 import com.ecommerce.userservice.exception.ResourceNotFoundException;
@@ -10,9 +12,9 @@ import com.ecommerce.userservice.dto.request.PasswordResetConfirmDtoRequest;
 import com.ecommerce.userservice.dto.request.PasswordResetDtoRequest;
 import com.ecommerce.userservice.dto.request.SignupDtoRequest;
 import com.ecommerce.userservice.dto.response.LoginDtoResponse;
+import com.ecommerce.userservice.repository.RoleRepository;
 import com.ecommerce.userservice.repository.UserRepository;
 import com.ecommerce.userservice.security.JwtUtils;
-import jakarta.validation.ValidationException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -30,6 +32,8 @@ public class AuthServiceImpl implements AuthService {
     private final AuthenticationManager authenticationManager;
 
     private final UserRepository userRepository;
+
+    private final RoleRepository roleRepository;
 
     private final PasswordEncoder encoder;
 
@@ -56,24 +60,6 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public String refreshToken(String refreshToken) {
-        if (!jwtUtils.isRefreshToken(refreshToken)) {
-            throw new BadCredentialsException("Invalid refresh token");
-        }
-
-        String username = jwtUtils.getUserNameFromJwtToken(refreshToken);
-
-        Optional<UserEntity> userOptional = userRepository.findByUsername(username);
-        if (userOptional.isEmpty()) {
-            throw new ResourceNotFoundException("User not found");
-        }
-
-        UserEntity user = userOptional.get();
-
-        return jwtUtils.generateAccessToken(user.getUsername());
-    }
-
-    @Override
     public String registerUser(SignupDtoRequest signUpDtoRequest) {
         if (userRepository.existsByUsername(signUpDtoRequest.getUsername())) {
             throw new DuplicateResourceException("Error: Username is already taken!");
@@ -89,6 +75,10 @@ public class AuthServiceImpl implements AuthService {
                 signUpDtoRequest.getFirstName(),
                 signUpDtoRequest.getLastName(),
                 signUpDtoRequest.getPhone());
+
+        RoleEntity userRole = roleRepository.findByName(Role.USER.name())
+                .orElseThrow(() -> new ResourceNotFoundException("Error: Role USER is not found."));
+        user.getRoles().add(userRole);
 
         userRepository.save(user);
         return "User registered successfully!";
@@ -137,8 +127,8 @@ public class AuthServiceImpl implements AuthService {
             throw new BadCredentialsException("Invalid password reset token.");
         }
 
-        if (user.getResetPasswordTokenExpiryDate() == null || 
-            user.getResetPasswordTokenExpiryDate().before(new Date())) {
+        if (user.getResetPasswordTokenExpiryDate() == null ||
+                user.getResetPasswordTokenExpiryDate().before(new Date())) {
             throw new BadCredentialsException("Password reset token has expired.");
         }
 
@@ -149,5 +139,23 @@ public class AuthServiceImpl implements AuthService {
 
         userRepository.save(user);
         return "Password has been reset successfully.";
+    }
+
+    @Override
+    public String refreshToken(String refreshToken) {
+        if (!jwtUtils.isRefreshToken(refreshToken)) {
+            throw new BadCredentialsException("Invalid refresh token");
+        }
+
+        String username = jwtUtils.getUserNameFromJwtToken(refreshToken);
+
+        Optional<UserEntity> userOptional = userRepository.findByUsername(username);
+        if (userOptional.isEmpty()) {
+            throw new ResourceNotFoundException("User not found");
+        }
+
+        UserEntity user = userOptional.get();
+
+        return jwtUtils.generateAccessToken(user.getUsername());
     }
 }

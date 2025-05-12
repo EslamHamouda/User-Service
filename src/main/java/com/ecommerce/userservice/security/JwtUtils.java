@@ -1,5 +1,6 @@
 package com.ecommerce.userservice.security;
 
+import com.ecommerce.userservice.entity.RoleEntity;
 import com.ecommerce.userservice.entity.UserEntity;
 import com.ecommerce.userservice.exception.BadCredentialsException;
 import com.ecommerce.userservice.exception.ValidationException;
@@ -12,6 +13,7 @@ import org.springframework.stereotype.Component;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import io.jsonwebtoken.JwtException;
@@ -43,7 +45,9 @@ public class JwtUtils {
         UserEntity userPrincipal = (UserEntity) authentication.getPrincipal();
         Map<String, Object> claims = new HashMap<>();
         claims.put("tokenType", "access");
-        claims.put("role", userPrincipal.getRole().name());
+        claims.put("roles", userPrincipal.getRoles().stream()
+                .map(RoleEntity::getName)
+                .collect(Collectors.toList()));
         return tokenBuilder(claims, userPrincipal.getUsername(), accessTokenExpirationMs);
     }
 
