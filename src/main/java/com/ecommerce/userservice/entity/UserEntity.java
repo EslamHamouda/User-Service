@@ -1,6 +1,5 @@
 package com.ecommerce.userservice.entity;
 
-import com.ecommerce.userservice.enums.Role;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -17,7 +16,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -63,6 +61,13 @@ public class UserEntity implements UserDetails {
 
     private Date resetPasswordTokenExpiryDate;
 
+    @CreationTimestamp
+    @Column(updatable = false)
+    private Date createdAt;
+
+    @UpdateTimestamp
+    private Date updatedAt;
+
     @ManyToMany(fetch = FetchType.EAGER, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinTable(
         name = "user_roles",
@@ -70,13 +75,6 @@ public class UserEntity implements UserDetails {
         inverseJoinColumns = @JoinColumn(name = "role_id")
     )
     private Set<RoleEntity> roles = new HashSet<>();
-
-    @CreationTimestamp
-    @Column(updatable = false)
-    private Date createdAt;
-
-    @UpdateTimestamp
-    private Date updatedAt;
 
     public UserEntity(String username, String email, String password, String firstName, String lastName, String phone) {
         this.username = username;

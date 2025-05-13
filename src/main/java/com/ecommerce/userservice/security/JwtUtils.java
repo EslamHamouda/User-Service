@@ -3,7 +3,6 @@ package com.ecommerce.userservice.security;
 import com.ecommerce.userservice.entity.RoleEntity;
 import com.ecommerce.userservice.entity.UserEntity;
 import com.ecommerce.userservice.exception.BadCredentialsException;
-import com.ecommerce.userservice.exception.ValidationException;
 import io.jsonwebtoken.Claims;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

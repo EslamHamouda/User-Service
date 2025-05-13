@@ -1,6 +1,5 @@
 package com.ecommerce.userservice.dto.request;
 
-import com.ecommerce.userservice.enums.Role;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;

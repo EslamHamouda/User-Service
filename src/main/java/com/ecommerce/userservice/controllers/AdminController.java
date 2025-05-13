@@ -2,21 +2,12 @@ package com.ecommerce.userservice.controllers;
 
 import com.ecommerce.userservice.dto.response.GenericResponse;
 import com.ecommerce.userservice.dto.response.ProfileDtoResponse;
-import com.ecommerce.userservice.entity.RoleEntity;
-import com.ecommerce.userservice.entity.UserEntity;
-import com.ecommerce.userservice.enums.Role;
-import com.ecommerce.userservice.exception.ResourceNotFoundException;
-import com.ecommerce.userservice.repository.RoleRepository;
-import com.ecommerce.userservice.repository.UserRepository;
 import com.ecommerce.userservice.services.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
-
 import static org.springframework.http.HttpStatus.OK;
 
 @CrossOrigin(origins = "*", maxAge = 3600)
