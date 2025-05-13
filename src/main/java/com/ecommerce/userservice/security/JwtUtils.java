@@ -88,8 +88,7 @@ public class JwtUtils {
                     .parseSignedClaims(authToken);
             return true;
         } catch (JwtException e) {
-            logger.error("Invalid JWT token: " + e.getMessage());
-            throw new BadCredentialsException("Invalid JWT token: " + e.getMessage());
+            throw new BadCredentialsException(e.getMessage());
         }
     }
 
