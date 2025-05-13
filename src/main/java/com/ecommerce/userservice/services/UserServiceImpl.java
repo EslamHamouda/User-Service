@@ -1,5 +1,6 @@
 package com.ecommerce.userservice.services;
 
+import com.ecommerce.userservice.utils.MessageConstants;
 import com.ecommerce.userservice.entity.RoleEntity;
 import com.ecommerce.userservice.exception.ResourceAlreadyExistException;
 import com.ecommerce.userservice.exception.ResourceNotFoundException;
@@ -33,7 +34,7 @@ public class UserServiceImpl implements UserService {
         Optional<UserEntity> user = userRepository.findById(userDetails.getId());
 
         if (user.isEmpty()) {
-            throw new ResourceNotFoundException("User not found!");
+            throw new ResourceNotFoundException(MessageConstants.USER_NOT_FOUND);
         }
 
         return userMapper.toProfileResponse(user.get());
@@ -47,7 +48,7 @@ public class UserServiceImpl implements UserService {
         Optional<UserEntity> userOptional = userRepository.findById(userDetails.getId());
 
         if (userOptional.isEmpty()) {
-            throw new ResourceNotFoundException("User not found!");
+            throw new ResourceNotFoundException(MessageConstants.USER_NOT_FOUND);
         }
 
         UserEntity user = userOptional.get();
@@ -63,7 +64,7 @@ public class UserServiceImpl implements UserService {
         }
 
         userRepository.save(user);
-        return "Profile updated successfully!";
+        return MessageConstants.PROFILE_UPDATED;
     }
 
     @Override
@@ -78,7 +79,7 @@ public class UserServiceImpl implements UserService {
     public ProfileDtoResponse getUserById(Long id) {
         Optional<UserEntity> userOptional = userRepository.findById(id);
         if (userOptional.isEmpty()) {
-            throw new ResourceNotFoundException("User not found with id: " + id);
+            throw new ResourceNotFoundException(MessageConstants.USER_NOT_FOUND);
         }
         return userMapper.toProfileResponse(userOptional.get());
     }
@@ -87,48 +88,48 @@ public class UserServiceImpl implements UserService {
     public String deleteUser(Long id) {
         Optional<UserEntity> userOptional = userRepository.findById(id);
         if (userOptional.isEmpty()) {
-            throw new ResourceNotFoundException("User not found with id: " + id);
+            throw new ResourceNotFoundException(MessageConstants.USER_NOT_FOUND);
         }
         userRepository.deleteById(id);
-        return "User deleted successfully!";
+        return MessageConstants.USER_DELETED;
     }
 
     @Override
     public String addRoleToUser(Long id, String role) {
         UserEntity user = userRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(MessageConstants.USER_NOT_FOUND));
 
         RoleEntity roleEntity = roleRepository.findByName(role)
-                .orElseThrow(() -> new ResourceNotFoundException("Role not found with name: " + role));
+                .orElseThrow(() -> new ResourceNotFoundException(MessageConstants.ROLE_NOT_FOUND));
 
         if (user.getRoles().contains(roleEntity)) {
-            throw new ResourceAlreadyExistException("Role already exist with name: " + role + " for user with id: " + id);
+            throw new ResourceAlreadyExistException(String.format(MessageConstants.ROLE_ALREADY_EXISTS, role, id));
         }
         user.getRoles().add(roleEntity);
         userRepository.save(user);
-        return "Role " + role + " assigned to user successfully";
+        return String.format(MessageConstants.ROLE_ASSIGNED, role);
     }
 
     @Override
     public String removeRoleFromUser(Long id, String role) {
         UserEntity user = userRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(String.format(MessageConstants.USER_NOT_FOUND_WITH_ID, id)));
 
         RoleEntity roleEntity = roleRepository.findByName(role)
-                .orElseThrow(() -> new ResourceNotFoundException("Role not found with name: " + role));
+                .orElseThrow(() -> new ResourceNotFoundException(String.format(MessageConstants.ROLE_NOT_FOUND_WITH_NAME, role)));
 
         if (!user.getRoles().contains(roleEntity)) {
-            throw new ResourceNotFoundException("Role not found with name: " + role + " for user with id: " + id);
+            throw new ResourceNotFoundException(String.format(MessageConstants.ROLE_NOT_FOUND_FOR_USER, role, id));
         }
         user.getRoles().remove(roleEntity);
         userRepository.save(user);
-        return "Role " + role + " removed from user successfully";
+        return String.format(MessageConstants.ROLE_REMOVED, role);
     }
 
     @Override
     public Set<String> getUserRoles(Long id) {
         UserEntity user = userRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(String.format(MessageConstants.USER_NOT_FOUND_WITH_ID, id)));
 
         return user.getRoles().stream()
                 .map(RoleEntity::getName)

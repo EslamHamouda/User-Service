@@ -1,5 +1,6 @@
 package com.ecommerce.userservice.exception;
 
+import com.ecommerce.userservice.utils.MessageConstants;
 import com.ecommerce.userservice.dto.response.ErrorResponse;
 import com.ecommerce.userservice.utils.DateUtils;
 import org.springframework.http.HttpStatus;
@@ -58,6 +59,6 @@ public class ExceptionHandlerController {
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public ErrorResponse handleGeneric(Exception ex) {
         return new ErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(),
-                        "An unexpected error occurred: " + ex.getMessage(), DateUtils.currentLocalDateTime());
+                        MessageConstants.UNEXPECTED_ERROR + ex.getMessage(), DateUtils.currentLocalDateTime());
     }
 }

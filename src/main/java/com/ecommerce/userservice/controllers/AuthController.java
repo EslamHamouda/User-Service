@@ -1,5 +1,6 @@
 package com.ecommerce.userservice.controllers;
 
+import com.ecommerce.userservice.utils.MessageConstants;
 import com.ecommerce.userservice.dto.request.LoginDtoRequest;
 import com.ecommerce.userservice.dto.request.PasswordResetConfirmDtoRequest;
 import com.ecommerce.userservice.dto.request.PasswordResetDtoRequest;
@@ -46,6 +47,6 @@ public class AuthController {
     @GetMapping("/refresh-token")
     public ResponseEntity<GenericResponse<String>> refreshToken(@RequestParam String refreshToken) {
         String newToken = authService.refreshToken(refreshToken);
-        return ResponseEntity.ok(new GenericResponse<>(OK.value(), "Token refreshed successfully", newToken));
+        return ResponseEntity.ok(new GenericResponse<>(OK.value(), MessageConstants.TOKEN_REFRESHED, newToken));
     }
 }

@@ -5,6 +5,7 @@ import com.ecommerce.userservice.exception.ResourceNotFoundException;
 import com.ecommerce.userservice.repository.UserRepository;
 import com.ecommerce.userservice.security.AuthTokenFilter;
 import com.ecommerce.userservice.security.JwtUtils;
+import com.ecommerce.userservice.utils.MessageConstants;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -37,7 +38,7 @@ public class WebSecurityConfig {
     @Bean
     UserDetailsService userDetailsService() {
         return username ->  userRepository.findByUsername(username)
-                .orElseThrow(() -> new ResourceNotFoundException("User Not Found with username: " + username));
+                .orElseThrow(() -> new ResourceNotFoundException(String.format(MessageConstants.USER_NOT_FOUND_WITH_USERNAME, username)));
     }
 
     @Bean

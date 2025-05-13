@@ -1,5 +1,6 @@
 package com.ecommerce.userservice.services;
 
+import com.ecommerce.userservice.utils.MessageConstants;
 import com.ecommerce.userservice.entity.RoleEntity;
 import com.ecommerce.userservice.enums.Role;
 import com.ecommerce.userservice.exception.BadCredentialsException;
@@ -43,7 +44,7 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public LoginDtoResponse authenticateUser(LoginDtoRequest loginDtoRequest) {
         if (!userRepository.existsByUsername(loginDtoRequest.getUsername())) {
-            throw new BadCredentialsException("Invalid username or password.");
+            throw new BadCredentialsException(MessageConstants.INVALID_CREDENTIALS);
         }
 
         Authentication authentication = authenticationManager.authenticate(
@@ -52,7 +53,7 @@ public class AuthServiceImpl implements AuthService {
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
         UserEntity user = (UserEntity) authentication.getPrincipal();
-        String jwt = jwtUtils.generateAccessToken(authentication);
+        String jwt = jwtUtils.generateAccessToken(user);
         String refreshToken = jwtUtils.generateRefreshToken(user.getUsername());
 
         return userMapper.toLoginResponse(user, jwt, refreshToken);
@@ -61,11 +62,11 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public String registerUser(SignupDtoRequest signUpDtoRequest) {
         if (userRepository.existsByUsername(signUpDtoRequest.getUsername())) {
-            throw new DuplicateResourceException("Error: Username is already taken!");
+            throw new DuplicateResourceException(MessageConstants.USERNAME_TAKEN);
         }
 
         if (userRepository.existsByEmail(signUpDtoRequest.getEmail())) {
-            throw new DuplicateResourceException("Error: Email is already in use!");
+            throw new DuplicateResourceException(MessageConstants.EMAIL_IN_USE);
         }
 
         UserEntity user = new UserEntity(signUpDtoRequest.getUsername(),
@@ -76,11 +77,11 @@ public class AuthServiceImpl implements AuthService {
                 signUpDtoRequest.getPhone());
 
         RoleEntity userRole = roleRepository.findByName(Role.USER.name())
-                .orElseThrow(() -> new ResourceNotFoundException("Error: Role USER is not found."));
+                .orElseThrow(() -> new ResourceNotFoundException(MessageConstants.ROLE_NOT_FOUND));
         user.getRoles().add(userRole);
 
         userRepository.save(user);
-        return "User registered successfully!";
+        return MessageConstants.USER_REGISTERED;
     }
 
     @Override
@@ -88,7 +89,7 @@ public class AuthServiceImpl implements AuthService {
         Optional<UserEntity> userOptional = userRepository.findByEmail(resetRequest.getEmail());
 
         if (userOptional.isEmpty()) {
-            throw new ResourceNotFoundException("If your email exists in our system, you will receive a password reset link.");
+            throw new ResourceNotFoundException(MessageConstants.EMAIL_RESET_MESSAGE);
         }
 
         UserEntity user = userOptional.get();
@@ -102,33 +103,33 @@ public class AuthServiceImpl implements AuthService {
 
         userRepository.save(user);
 
-        return "Password reset link has been sent to your email. Token: " + token;
+        return MessageConstants.PASSWORD_RESET_SENT + token;
     }
 
     @Override
     public String resetPasswordConfirm(PasswordResetConfirmDtoRequest confirmRequest) {
         String token = confirmRequest.getPasswordResetToken();
 
-        if (!jwtUtils.validateJwtToken(token) || !jwtUtils.isPasswordResetToken(token)) {
-            throw new BadCredentialsException("Invalid password reset token.");
+        if (!jwtUtils.validateJwtToken(token) || !jwtUtils.isPasswordResetToken(token) ) {
+            throw new BadCredentialsException(MessageConstants.INVALID_PASSWORD_RESET_TOKEN);
         }
 
         String email = jwtUtils.getUserNameFromJwtToken(token);
 
-        Optional<UserEntity> userOptional = userRepository.findByResetPasswordToken(email);
+        Optional<UserEntity> userOptional = userRepository.findByEmail(email);
         if (userOptional.isEmpty()) {
-            throw new ResourceNotFoundException("User not found.");
+            throw new ResourceNotFoundException(MessageConstants.USER_NOT_FOUND);
         }
 
         UserEntity user = userOptional.get();
 
         if (user.getResetPasswordToken() == null || !user.getResetPasswordToken().equals(token)) {
-            throw new BadCredentialsException("Invalid password reset token.");
+            throw new BadCredentialsException(MessageConstants.INVALID_PASSWORD_RESET_TOKEN);
         }
 
         if (user.getResetPasswordTokenExpiryDate() == null ||
                 user.getResetPasswordTokenExpiryDate().before(new Date())) {
-            throw new BadCredentialsException("Password reset token has expired.");
+            throw new BadCredentialsException(MessageConstants.PASSWORD_RESET_TOKEN_EXPIRED);
         }
 
         user.setPassword(encoder.encode(confirmRequest.getPassword()));
@@ -137,24 +138,24 @@ public class AuthServiceImpl implements AuthService {
         user.setResetPasswordTokenExpiryDate(null);
 
         userRepository.save(user);
-        return "Password has been reset successfully.";
+        return MessageConstants.PASSWORD_RESET_SUCCESS;
     }
 
     @Override
     public String refreshToken(String refreshToken) {
-        if (!jwtUtils.isRefreshToken(refreshToken)) {
-            throw new BadCredentialsException("Invalid refresh token");
+        if (!jwtUtils.isRefreshToken(refreshToken) && !jwtUtils.isTokenExpired(refreshToken)) {
+            throw new BadCredentialsException(MessageConstants.INVALID_REFRESH_TOKEN);
         }
 
         String username = jwtUtils.getUserNameFromJwtToken(refreshToken);
 
         Optional<UserEntity> userOptional = userRepository.findByUsername(username);
         if (userOptional.isEmpty()) {
-            throw new ResourceNotFoundException("User not found");
+            throw new ResourceNotFoundException(MessageConstants.USER_NOT_FOUND);
         }
 
         UserEntity user = userOptional.get();
 
-        return jwtUtils.generateAccessToken(user.getUsername());
+        return jwtUtils.generateAccessToken(user);
     }
 }

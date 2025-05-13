@@ -40,20 +40,13 @@ public class JwtUtils {
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
-    public String generateAccessToken(Authentication authentication) {
-        UserEntity userPrincipal = (UserEntity) authentication.getPrincipal();
+    public String generateAccessToken(UserEntity user) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("tokenType", "access");
-        claims.put("roles", userPrincipal.getRoles().stream()
+        claims.put("roles", user.getRoles().stream()
                 .map(RoleEntity::getName)
                 .collect(Collectors.toList()));
-        return tokenBuilder(claims, userPrincipal.getUsername(), accessTokenExpirationMs);
-    }
-
-    public String generateAccessToken(String subject) {
-        Map<String, Object> claims = new HashMap<>();
-        claims.put("tokenType", "access");
-        return tokenBuilder(claims, subject, accessTokenExpirationMs);
+        return tokenBuilder(claims, user.getUsername(), accessTokenExpirationMs);
     }
 
     public String generateRefreshToken(String subject) {
@@ -95,8 +88,8 @@ public class JwtUtils {
                     .parseSignedClaims(authToken);
             return true;
         } catch (JwtException e) {
-            logger.error("Invalid JWT token: {}", e.getMessage());
-            throw new BadCredentialsException("Invalid JWT token: {}" + e.getMessage());
+            logger.error("Invalid JWT token: " + e.getMessage());
+            throw new BadCredentialsException("Invalid JWT token: " + e.getMessage());
         }
     }
 
