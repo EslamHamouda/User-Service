@@ -10,7 +10,7 @@ import lombok.Setter;
 public class LoginDtoResponse {
     private String accessToken;
     private String refreshToken;
-    private String type = "Bearer";
+    private String type;
     private Long id;
     private String username;
     private String email;
