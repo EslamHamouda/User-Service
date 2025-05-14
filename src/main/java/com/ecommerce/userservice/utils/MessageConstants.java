@@ -26,4 +26,7 @@ public final class MessageConstants {
     public static final String ROLE_REMOVED = "Role %s removed from user successfully";
     public static final String USER_NOT_FOUND_WITH_USERNAME = "User Not Found with username: %s";
     public static final String INVALID_JWT_TOKEN = "Invalid JWT token: %s";
+    public static final String ROLES_RETRIEVED = "User roles retrieved successfully";
+    public static final String USERS_RETRIEVED = "All users retrieved successfully";
+    public static final String USER_RETRIEVED = "User retrieved successfully";
 }

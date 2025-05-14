@@ -3,6 +3,7 @@ package com.ecommerce.userservice.controllers;
 import com.ecommerce.userservice.dto.response.GenericResponse;
 import com.ecommerce.userservice.dto.response.ProfileDtoResponse;
 import com.ecommerce.userservice.services.UserService;
+import com.ecommerce.userservice.utils.MessageConstants;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -20,13 +21,13 @@ public class AdminController {
     @GetMapping("/users")
     public ResponseEntity<GenericResponse<List<ProfileDtoResponse>>> getAllUsers() {
         List<ProfileDtoResponse> users = userService.getAllUsers();
-        return ResponseEntity.ok(new GenericResponse<>(OK.value(), "All users retrieved successfully", users));
+        return ResponseEntity.ok(new GenericResponse<>(OK.value(), MessageConstants.USERS_RETRIEVED, users));
     }
 
     @GetMapping("/users/{id}")
     public ResponseEntity<GenericResponse<ProfileDtoResponse>> getUserById(@PathVariable Long id) {
         ProfileDtoResponse user = userService.getUserById(id);
-        return ResponseEntity.ok(new GenericResponse<>(OK.value(), "User retrieved successfully", user));
+        return ResponseEntity.ok(new GenericResponse<>(OK.value(), MessageConstants.USER_RETRIEVED, user));
     }
 
     @DeleteMapping("/users/{id}")
@@ -57,6 +58,6 @@ public class AdminController {
     public ResponseEntity<GenericResponse<Set<String>>> getUserRoles(@PathVariable Long userId) {
         Set<String> roles = userService.getUserRoles(userId);
         return ResponseEntity.ok(new GenericResponse<>(OK.value(),
-                "User roles retrieved successfully", roles));
+                MessageConstants.ROLES_RETRIEVED, roles));
     }
 }
