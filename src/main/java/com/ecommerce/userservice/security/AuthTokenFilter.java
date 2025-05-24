@@ -1,5 +1,6 @@
 package com.ecommerce.userservice.security;
 
+import com.ecommerce.userservice.enums.TokenType;
 import com.ecommerce.userservice.exception.CustomAuthenticationEntryPoint;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -32,8 +33,8 @@ public class AuthTokenFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
         try {
             String jwt = parseJwt(request);
-            if (jwt != null && jwtUtils.validateJwtToken(jwt) && jwtUtils.isAccessToken(jwt)) {
-                String username = jwtUtils.getUserNameFromJwtToken(jwt);
+            if (jwt != null && jwtUtils.validateToken(jwt, TokenType.ACCESS)) {
+                String username = jwtUtils.extractUsername(jwt, TokenType.ACCESS);
 
                 UserDetails userDetails = userDetailsService.loadUserByUsername(username);
                 UsernamePasswordAuthenticationToken authentication =

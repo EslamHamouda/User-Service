@@ -2,6 +2,7 @@ package com.ecommerce.userservice.security;
 
 import com.ecommerce.userservice.entity.RoleEntity;
 import com.ecommerce.userservice.entity.UserEntity;
+import com.ecommerce.userservice.enums.TokenType;
 import com.ecommerce.userservice.exception.BadCredentialsException;
 import io.jsonwebtoken.Claims;
 import org.slf4j.Logger;
@@ -23,8 +24,14 @@ import javax.crypto.SecretKey;
 public class JwtUtils {
     private static final Logger logger = LoggerFactory.getLogger(JwtUtils.class);
 
-    @Value("${jwt.secret}")
-    private String jwtSecret;
+    @Value("${jwt.accessToken.secret}")
+    private String accessSecret;
+
+    @Value("${jwt.refreshToken.secret}")
+    private String refreshSecret;
+
+    @Value("${jwt.passwordResetToken.secret}")
+    private String passwordResetSecret;
 
     @Value("${jwt.accessToken.expiration}")
     private long accessTokenExpirationMs;
@@ -35,103 +42,78 @@ public class JwtUtils {
     @Value("${jwt.passwordResetToken.expiration}")
     private long passwordResetTokenExpirationMs;
 
-    private SecretKey getSigningKey() {
-        byte[] keyBytes = Decoders.BASE64.decode(jwtSecret);
-        return Keys.hmacShaKeyFor(keyBytes);
+    private SecretKey getKeyForType(TokenType type) {
+        String secret = switch (type) {
+            case ACCESS -> accessSecret;
+            case REFRESH -> refreshSecret;
+            case PASSWORD_RESET -> passwordResetSecret;
+        };
+        return Keys.hmacShaKeyFor(Decoders.BASE64.decode(secret));
+    }
+
+    private long getExpirationForType(TokenType type) {
+        return switch (type) {
+            case ACCESS -> accessTokenExpirationMs;
+            case REFRESH -> refreshTokenExpirationMs;
+            case PASSWORD_RESET -> passwordResetTokenExpirationMs;
+        };
     }
 
     public String generateAccessToken(UserEntity user) {
         Map<String, Object> claims = new HashMap<>();
-        claims.put("tokenType", "access");
         claims.put("roles", user.getRoles().stream()
                 .map(RoleEntity::getName)
                 .collect(Collectors.toList()));
-        return tokenBuilder(claims, user.getUsername(), accessTokenExpirationMs);
+        return buildToken(claims, user.getUsername(), TokenType.ACCESS);
     }
 
     public String generateRefreshToken(String subject) {
-        Map<String, Object> claims = new HashMap<>();
-        claims.put("tokenType", "refresh");
-        return tokenBuilder(claims, subject, refreshTokenExpirationMs);
+        return buildToken(new HashMap<>(), subject, TokenType.REFRESH);
     }
 
     public String generatePasswordResetToken(String email) {
-        Map<String, Object> claims = new HashMap<>();
-        claims.put("tokenType", "passwordReset");
-        return tokenBuilder(claims, email, passwordResetTokenExpirationMs);
+        return buildToken(new HashMap<>(), email, TokenType.PASSWORD_RESET);
     }
 
-    private String tokenBuilder(Map<String, Object> claims, String subject, Long expiration) {
+
+    private String buildToken(Map<String, Object> claims, String subject, TokenType type) {
         return Jwts.builder()
                 .subject(subject)
                 .claims(claims)
-                .issuedAt(new Date(System.currentTimeMillis()))
-                .expiration(new Date(System.currentTimeMillis() + expiration))
-                .signWith(getSigningKey())
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + getExpirationForType(type)))
+                .signWith(getKeyForType(type))
                 .compact();
     }
 
-    public String getUserNameFromJwtToken(String token) {
-        return Jwts.parser()
-                .verifyWith(getSigningKey())
-                .build()
-                .parseSignedClaims(token)
-                .getPayload()
-                .getSubject();
+    public String extractUsername(String token, TokenType type) {
+        return extractAllClaims(token, type).getSubject();
     }
 
-    public boolean validateJwtToken(String authToken) {
+    public Date extractExpiration(String token, TokenType type) {
+        return extractAllClaims(token, type).getExpiration();
+    }
+
+    public boolean validateToken(String token, TokenType type) {
         try {
-            Jwts.parser()
-                    .verifyWith(getSigningKey())
-                    .build()
-                    .parseSignedClaims(authToken);
+            extractAllClaims(token, type); // Will throw if invalid
             return true;
         } catch (JwtException e) {
             throw new BadCredentialsException(e.getMessage());
         }
     }
 
-    public boolean isRefreshToken(String token) {
+    public boolean isExpired(String token, TokenType type) {
         try {
-            Claims claims = extractAllClaims(token);
-            return "refresh".equals(claims.get("tokenType"));
+            return extractAllClaims(token, type).getExpiration().before(new Date());
         } catch (Exception e) {
-            return false;
+            return true;
         }
     }
 
-    public boolean isTokenExpired(String token) {
-        try {
-            Claims claims = extractAllClaims(token);
-
-            return claims.getExpiration().before(new Date());
-        } catch (Exception ex) {
-            return false;
-        }
-    }
-
-    public boolean isPasswordResetToken(String token) {
-        try {
-            Claims claims = extractAllClaims(token);
-            return "passwordReset".equals(claims.get("tokenType"));
-        } catch (Exception e) {
-            return false;
-        }
-    }
-
-    public boolean isAccessToken(String token) {
-        try {
-            Claims claims = extractAllClaims(token);
-            return "access".equals(claims.get("tokenType"));
-        } catch (Exception e) {
-            return false;
-        }
-    }
-
-    public Claims extractAllClaims(String token) {
+    private Claims extractAllClaims(String token, TokenType type) {
         return Jwts.parser()
-                .verifyWith(getSigningKey())
+                .verifyWith(getKeyForType(type))
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();

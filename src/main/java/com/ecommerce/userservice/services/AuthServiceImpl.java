@@ -1,5 +1,6 @@
 package com.ecommerce.userservice.services;
 
+import com.ecommerce.userservice.enums.TokenType;
 import com.ecommerce.userservice.utils.MessageConstants;
 import com.ecommerce.userservice.entity.RoleEntity;
 import com.ecommerce.userservice.enums.Role;
@@ -98,7 +99,7 @@ public class AuthServiceImpl implements AuthService {
 
         user.setResetPasswordToken(token);
 
-        Date expiryDate = jwtUtils.extractAllClaims(token).getExpiration();
+        Date expiryDate = jwtUtils.extractExpiration(token, TokenType.PASSWORD_RESET);
         user.setResetPasswordTokenExpiryDate(expiryDate);
 
         userRepository.save(user);
@@ -110,11 +111,11 @@ public class AuthServiceImpl implements AuthService {
     public String resetPasswordConfirm(PasswordResetConfirmDtoRequest confirmRequest) {
         String token = confirmRequest.getPasswordResetToken();
 
-        if (!jwtUtils.validateJwtToken(token) || !jwtUtils.isPasswordResetToken(token) ) {
+        if (!jwtUtils.validateToken(token, TokenType.PASSWORD_RESET)) {
             throw new BadCredentialsException(MessageConstants.INVALID_PASSWORD_RESET_TOKEN);
         }
 
-        String email = jwtUtils.getUserNameFromJwtToken(token);
+        String email = jwtUtils.extractUsername(token, TokenType.PASSWORD_RESET);
 
         Optional<UserEntity> userOptional = userRepository.findByEmail(email);
         if (userOptional.isEmpty()) {
@@ -143,11 +144,11 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public String refreshToken(String refreshToken) {
-        if (!jwtUtils.isRefreshToken(refreshToken) && !jwtUtils.isTokenExpired(refreshToken)) {
+        if (!jwtUtils.validateToken(refreshToken, TokenType.REFRESH) && !jwtUtils.isExpired(refreshToken, TokenType.REFRESH)) {
             throw new BadCredentialsException(MessageConstants.INVALID_REFRESH_TOKEN);
         }
 
-        String username = jwtUtils.getUserNameFromJwtToken(refreshToken);
+        String username = jwtUtils.extractUsername(refreshToken, TokenType.REFRESH);
 
         Optional<UserEntity> userOptional = userRepository.findByUsername(username);
         if (userOptional.isEmpty()) {
